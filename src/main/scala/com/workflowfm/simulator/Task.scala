@@ -70,16 +70,33 @@ class Task (
   }
 }
 
-case class TaskGenerator (
-  name :String,
-  simulation:String,
-  duration:ValueGenerator[Long],
-  cost:ValueGenerator[Long],
-  interrupt:Int=(-1),
-  priority:Task.Priority=Task.Medium,
-  createTime:Long=(-1)
-) {
-  def create(id: UUID, time: Long, actor: ActorRef, resources: String*) =
+trait TaskGenerator {
+  val createTime: Long
+  def create(id: UUID, time: Long, actor: ActorRef, resources: String*): Task
+}
+
+object TaskGenerator {
+  def apply (
+    name: String,
+    simulation: String,
+    duration: ValueGenerator[Long],
+    cost: ValueGenerator[Long],
+    interrupt: Int = (-1),
+    priority: Task.Priority = Task.Medium,
+    createTime: Long = (-1)
+  ) = SimpleTaskGenerator(name, simulation, duration, cost, interrupt, priority, createTime)
+}
+
+case class SimpleTaskGenerator (
+  name: String,
+  simulation: String,
+  duration: ValueGenerator[Long],
+  cost: ValueGenerator[Long],
+  interrupt: Int = (-1),
+  priority: Task.Priority = Task.Medium,
+  override val createTime: Long = (-1)
+) extends TaskGenerator {
+  override def create(id: UUID, time: Long, actor: ActorRef, resources: String*) =
     new Task(id,name,simulation,actor,time,resources,duration.get,duration.estimate,cost.get,interrupt,priority)
   def withPriority(p:Task.Priority) = copy(priority = p)
   def withInterrupt(int:Int) = copy(interrupt = int)

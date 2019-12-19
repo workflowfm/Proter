@@ -1,4 +1,4 @@
-ThisBuild / version          := "0.2.1"
+ThisBuild / version          := "0.3-alpha-SNAPSHOT"
 ThisBuild / organization     := "com.workflowfm"
 ThisBuild / scalaVersion     := "2.12.6"
 

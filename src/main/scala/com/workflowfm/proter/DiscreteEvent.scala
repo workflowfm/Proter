@@ -1,6 +1,7 @@
 package com.workflowfm.proter
 
 import akka.actor.ActorRef
+import com.workflowfm.proter.controller.{ArrivalRate, SimulationGenerator}
 
 /**
   * Discrete Events that need to be handled.
@@ -65,4 +66,13 @@ case class TimeLimit(override val time: Long) extends DiscreteEvent {
   override val classOrder: Short = 1
 
   override def sameClassCompare(that: DiscreteEvent): Int = 0
+}
+
+
+case class ArrivalProcess(override val time: Long, rate: ArrivalRate, simGenerator: SimulationGenerator) extends DiscreteEvent { //TODO simGenerator
+  override val classOrder: Short = 7
+  override def sameClassCompare(that: DiscreteEvent): Int = that match {
+    //case ArrivalProcess(_, r) => rate.compareTo(r)
+    case _ => 0
+  }
 }

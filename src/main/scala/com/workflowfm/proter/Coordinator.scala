@@ -17,6 +17,7 @@ import uk.ac.ed.inf.ppapapan.subakka.HashSetPublisher
 
 import com.workflowfm.proter.events._
 import com.workflowfm.proter.metrics._
+import com.workflowfm.proter.controller.{ArrivalRate, SimulationGenerator}
 
 /**
   * Provides coordination for discrete event simulation of multiple asynchronous simulations.
@@ -228,10 +229,19 @@ class Coordinator(
       case StartingSim(t, sim) if (t == time) => startSimulation(sim)
 
       case TimeLimit(t) if (t == time) => {
+        println("TIME LIMIT")
         abortAllSimulations()
         events.clear()
         stop()
       }
+
+      case ArrivalProcess(t, rate, simGenerator) if (t == time) => {
+        println("ArrivalProcess:")
+        println(time)
+        if (time < 110) events += ArrivalProcess(rate.next(t).toLong, rate, simGenerator)
+        startSimulation(context.system.actorOf(simGenerator.newSimProps(self)))
+      }
+
 
       case _ => publish(EError(self, time, s"Failed to handle event: $event"))
     }
@@ -641,8 +651,10 @@ class Coordinator(
     * @group toplevel
     */
   def stop(): Unit = {
+    println(" STOP ")
     publish(EDone(self, time))
     context.stop(self)
+    events.clear()
   }
 
   /**
@@ -675,6 +687,9 @@ class Coordinator(
     case Coordinator.AddResources(r) => r foreach addResource
 
     case Coordinator.LimitTime(t) => if (t >= time) events += TimeLimit(t)
+
+    case Coordinator.AddArrivalProcess(t, r, g) => if (t >= time) events += ArrivalProcess(t, r, g)
+    case Coordinator.AddArrivalProcessNow(r, g) => events += ArrivalProcess(time, r, g)
 
     case Coordinator.AddTasks(l) => addTasks(sender, l)
     case Coordinator.AddTask(generator) => addTask(generator)
@@ -785,6 +800,10 @@ object Coordinator {
     * @param t The timestamp when all simulations must stop.
     */
   case class LimitTime(t: Long)
+
+  //TODO docs
+  case class AddArrivalProcess(t: Long, r: ArrivalRate, g: SimulationGenerator)
+  case class AddArrivalProcessNow(r: ArrivalRate, g: SimulationGenerator)
 
   /**
     * Message from a [[Simulation]] that the simulation has started.
